@@ -40,9 +40,13 @@ function getListingIdFromUrl() {
         segment === 'view-split-lease' || segment === 'view-split-lease-1'
     );
 
-    // If found and there's a next segment, use it as the ID
+    // If found and there's a next segment that's not a file, use it as the ID
     if (viewSegmentIndex !== -1 && pathSegments[viewSegmentIndex + 1]) {
-        return pathSegments[viewSegmentIndex + 1];
+        const nextSegment = pathSegments[viewSegmentIndex + 1];
+        // Make sure it's not a filename (doesn't end with .html, .php, etc.)
+        if (!nextSegment.includes('.')) {
+            return nextSegment;
+        }
     }
 
     // Fallback: check query parameter for backward compatibility
