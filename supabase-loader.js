@@ -30,8 +30,22 @@ const LOOKUP_CACHE = {
     }
 };
 
-// Extract listing ID from URL
+// Extract listing ID from URL path segment
 function getListingIdFromUrl() {
+    // Extract ID from path: /view-split-lease/<id> or /view-split-lease-1/<id>
+    const pathSegments = window.location.pathname.split('/').filter(segment => segment);
+
+    // Find the index of 'view-split-lease' or 'view-split-lease-1' segment
+    const viewSegmentIndex = pathSegments.findIndex(segment =>
+        segment === 'view-split-lease' || segment === 'view-split-lease-1'
+    );
+
+    // If found and there's a next segment, use it as the ID
+    if (viewSegmentIndex !== -1 && pathSegments[viewSegmentIndex + 1]) {
+        return pathSegments[viewSegmentIndex + 1];
+    }
+
+    // Fallback: check query parameter for backward compatibility
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id') || '1586447992720x748691103167545300'; // Default for testing
 }
