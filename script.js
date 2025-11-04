@@ -30,10 +30,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (descriptionText.classList.contains('expanded')) {
                 descriptionText.classList.remove('expanded');
+                const fullDesc = descriptionText.dataset.fullDescription;
+                if (fullDesc) {
+                    descriptionText.textContent = fullDesc.substring(0, 150) + '...';
+                }
                 this.textContent = 'Read More';
             } else {
                 descriptionText.classList.add('expanded');
-                descriptionText.textContent = 'We want everyone to have a comfortable place to stay. Our digital check-in process makes arrival seamless, and our dedicated support team is available 24/7 to ensure your stay is comfortable and hassle-free. The studio features modern amenities, comfortable furnishings, and is located in the heart of Civic Center, Manhattan, with easy access to public transportation, restaurants, and local attractions.';
+                const fullDesc = descriptionText.dataset.fullDescription;
+                if (fullDesc) {
+                    descriptionText.textContent = fullDesc;
+                }
                 this.textContent = 'Show Less';
             }
         });
