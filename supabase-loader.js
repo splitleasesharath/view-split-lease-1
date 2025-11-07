@@ -61,7 +61,7 @@ function getListingIdFromUrl() {
 
     // Fallback: check query parameter for backward compatibility
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('id') || '1586447992720x748691103167545300'; // Default for testing
+    return urlParams.get('id') || null;
 }
 
 // Format price for display
@@ -157,35 +157,22 @@ function updatePageContent(listing, photos) {
     }
 
     // Update location
-    const locationLink = document.querySelector('.location-link');
-    if (locationLink) {
-        const neighborhood = listing['neighborhood (manual input by user)'];
-
-        if (neighborhood) {
-            // Check if neighborhood already contains "Manhattan" or other borough name
-            const boroughNames = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'];
-            const hasBorough = boroughNames.some(borough => neighborhood.includes(borough));
-
-            if (hasBorough) {
-                // Already has borough in the name (e.g., "Civic Center, Manhattan")
-                locationLink.textContent = neighborhood;
-            } else {
-                // Just the neighborhood name (e.g., "Greenwich Village")
-                // Add "Manhattan" as default borough
-                locationLink.textContent = `${neighborhood}, Manhattan`;
-            }
-        } else {
-            // Fallback if no neighborhood data
-            locationLink.textContent = 'New York City';
-        }
+    const locationText = document.querySelector('.location-text');
+    if (locationText && listing['neighborhood (manual input by user)']) {
+        locationText.textContent = listing['neighborhood (manual input by user)'];
     }
 
     // Update capacity
     const capacityElement = document.querySelector('.property-capacity');
-    if (capacityElement) {
-        const listingType = LOOKUP_CACHE.listingTypes[listing['Features - Type of Space']]?.label || 'Entire Place';
-        const guests = listing['Features - Qty Guests'] || 2;
-        capacityElement.textContent = `${listingType} - ${guests} guests max`;
+    if (capacityElement && listing['Features - Qty Guests']) {
+        const listingType = LOOKUP_CACHE.listingTypes[listing['Features - Type of Space']]?.label;
+        const guests = listing['Features - Qty Guests'];
+
+        if (listingType && guests) {
+            capacityElement.textContent = `${listingType} - ${guests} guests max`;
+        } else if (guests) {
+            capacityElement.textContent = `${guests} guests max`;
+        }
     }
 
     // Update feature icons
@@ -298,18 +285,17 @@ function updateCommuteSection(listing) {
         }
     }
 
-    // Keep the metro info as default (not in DB)
-    commuteItems.push({
-        title: '2 min to Metro',
-        description: 'Quick walk to nearest station.'
-    });
-
-    commuteGrid.innerHTML = commuteItems.map(item => `
-        <div class="commute-item">
-            <h3>${item.title}</h3>
-            <p>${item.description}</p>
-        </div>
-    `).join('');
+    // Only display if there are actual commute items from database
+    if (commuteItems.length > 0) {
+        commuteGrid.innerHTML = commuteItems.map(item => `
+            <div class="commute-item">
+                <h3>${item.title}</h3>
+                <p>${item.description}</p>
+            </div>
+        `).join('');
+    } else {
+        commuteGrid.innerHTML = '';
+    }
 }
 
 // Update amenities section
@@ -329,14 +315,14 @@ function updateAmenities(listing) {
     };
 
     amenitiesGrid.innerHTML = amenities.map(amenity => {
-        const iconName = amenityIconMap[amenity.name] || 'circle';
-        return `
+        const iconName = amenityIconMap[amenity.name];
+        return iconName ? `
             <div class="amenity-item">
                 <i data-lucide="${iconName}" style="width: 27px; height: 27px;"></i>
                 <span>${amenity.name}</span>
             </div>
-        `;
-    }).join('');
+        ` : '';
+    }).filter(html => html).join('');
 
     // Re-initialize Lucide icons
     if (typeof lucide !== 'undefined') {
@@ -359,14 +345,14 @@ function updateSafetyFeatures(listing) {
     };
 
     safetyGrid.innerHTML = safetyFeatures.map(feature => {
-        const iconName = safetyIconMap[feature.name] || 'shield';
-        return `
+        const iconName = safetyIconMap[feature.name];
+        return iconName ? `
             <div class="amenity-item">
                 <i data-lucide="${iconName}" style="width: 27px; height: 27px;"></i>
                 <span>${feature.name}</span>
             </div>
-        `;
-    }).join('');
+        ` : '';
+    }).filter(html => html).join('');
 
     // Re-initialize Lucide icons
     if (typeof lucide !== 'undefined') {
@@ -520,6 +506,11 @@ async function initializePage() {
 
         // Get listing ID from URL
         const listingId = getListingIdFromUrl();
+
+        if (!listingId) {
+            throw new Error('No listing ID found in URL. Please provide a valid listing URL.');
+        }
+
         console.log('Loading listing:', listingId);
 
         // Fetch data
@@ -534,7 +525,7 @@ async function initializePage() {
     } catch (error) {
         console.error('Error initializing page:', error);
         hideLoading();
-        showError(error.message || 'Failed to load listing data. Please try again later.');
+        showError(error.message);
     }
 }
 
