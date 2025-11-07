@@ -109,6 +109,8 @@ async function fetchListingData(listingId) {
                 "Features - Qty Guests",
                 "Kitchen Type",
                 "Location - Address",
+                "Location - Hood",
+                "Location - Borough",
                 "neighborhood (manual input by user)",
                 "host name",
                 "💰Nightly Host Rate for 4 nights",
@@ -127,6 +129,53 @@ async function fetchListingData(listingId) {
             .single();
 
         if (listingError) throw listingError;
+
+        // Fetch neighborhood data if Location - Hood is set
+        let neighborhood = null;
+        if (listing['Location - Hood']) {
+            const { data: hoodData, error: hoodError } = await supabase
+                .from('zat_geo_hood_mediumlevel')
+                .select('Display')
+                .eq('_id', listing['Location - Hood'])
+                .single();
+
+            if (!hoodError && hoodData) {
+                neighborhood = hoodData.Display;
+            }
+        }
+
+        // Fetch borough data if Location - Borough is set
+        let borough = null;
+        if (listing['Location - Borough']) {
+            const { data: boroughData, error: boroughError } = await supabase
+                .from('zat_geo_borough_toplevel')
+                .select('"Display Borough"')
+                .eq('_id', listing['Location - Borough'])
+                .single();
+
+            if (!boroughError && boroughData) {
+                borough = boroughData['Display Borough'];
+            }
+        }
+
+        // Fetch type of space data if Features - Type of Space is set
+        let typeOfSpace = null;
+        if (listing['Features - Type of Space']) {
+            const { data: typeData, error: typeError } = await supabase
+                .from('zat_medium')
+                .select('Display')
+                .eq('_id', listing['Features - Type of Space'])
+                .single();
+
+            if (!typeError && typeData) {
+                typeOfSpace = typeData.Display;
+            }
+        }
+
+        // Add resolved location and type data to listing
+        listing.resolvedNeighborhood = neighborhood;
+        listing.resolvedBorough = borough;
+        listing.resolvedTypeOfSpace = typeOfSpace;
 
         // Query listing photos
         const { data: photos, error: photosError } = await supabase
@@ -156,16 +205,23 @@ function updatePageContent(listing, photos) {
         titleElement.textContent = listing.Name;
     }
 
-    // Update location
+    // Update location with resolved neighborhood and borough
     const locationText = document.querySelector('.location-text');
-    if (locationText && listing['neighborhood (manual input by user)']) {
-        locationText.textContent = listing['neighborhood (manual input by user)'];
+    if (locationText) {
+        // Prefer resolved neighborhood and borough from database lookups
+        if (listing.resolvedNeighborhood && listing.resolvedBorough) {
+            locationText.textContent = `${listing.resolvedNeighborhood}, ${listing.resolvedBorough}`;
+        } else if (listing['neighborhood (manual input by user)']) {
+            // Fallback to manual input
+            locationText.textContent = listing['neighborhood (manual input by user)'];
+        }
     }
 
     // Update capacity
     const capacityElement = document.querySelector('.property-capacity');
     if (capacityElement && listing['Features - Qty Guests']) {
-        const listingType = LOOKUP_CACHE.listingTypes[listing['Features - Type of Space']]?.label;
+        // Use resolved type from database if available
+        const listingType = listing.resolvedTypeOfSpace || LOOKUP_CACHE.listingTypes[listing['Features - Type of Space']]?.label;
         const guests = listing['Features - Qty Guests'];
 
         if (listingType && guests) {
@@ -241,9 +297,17 @@ function updateFeatureIcons(listing) {
         features.push({ icon: 'bath', text: `${bathroomCount} ${bathroomText}` });
     }
 
-    if (listing['Features - Qty Bedrooms'] === 0) {
+    // Use resolved type of space from database
+    const typeOfSpace = listing.resolvedTypeOfSpace;
+
+    if (typeOfSpace) {
+        // Use the database value for type of space
+        features.push({ icon: 'home', text: typeOfSpace });
+    } else if (listing['Features - Qty Bedrooms'] === 0) {
+        // Fallback to Studio if bedrooms is 0 and no type of space is set
         features.push({ icon: 'home', text: 'Studio' });
     } else if (listing['Features - Qty Bedrooms']) {
+        // Fallback to bedroom count
         const bedroomCount = listing['Features - Qty Bedrooms'];
         const bedroomText = bedroomCount === 1 ? 'Bedroom' : 'Bedrooms';
         features.push({ icon: 'door-open', text: `${bedroomCount} ${bedroomText}` });
