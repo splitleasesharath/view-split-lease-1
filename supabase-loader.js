@@ -160,13 +160,13 @@ async function fetchListingData(listingId) {
         let typeOfSpace = null;
         if (listing['Features - Type of Space']) {
             const { data: typeData, error: typeError } = await supabase
-                .from('zat_medium')
-                .select('Display')
+                .from('zat_features_listingtype')
+                .select('"Label "')
                 .eq('_id', listing['Features - Type of Space'])
                 .single();
 
             if (!typeError && typeData) {
-                typeOfSpace = typeData.Display;
+                typeOfSpace = typeData['Label '];
             }
         }
 
