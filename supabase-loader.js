@@ -59,9 +59,7 @@ function getListingIdFromUrl() {
         }
     }
 
-    // Fallback: check query parameter for backward compatibility
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('id') || null;
+    return null;
 }
 
 // Format price for display
@@ -207,28 +205,14 @@ function updatePageContent(listing, photos) {
 
     // Update location with resolved neighborhood and borough
     const locationText = document.querySelector('.location-text');
-    if (locationText) {
-        // Prefer resolved neighborhood and borough from database lookups
-        if (listing.resolvedNeighborhood && listing.resolvedBorough) {
-            locationText.textContent = `${listing.resolvedNeighborhood}, ${listing.resolvedBorough}`;
-        } else if (listing['neighborhood (manual input by user)']) {
-            // Fallback to manual input
-            locationText.textContent = listing['neighborhood (manual input by user)'];
-        }
+    if (locationText && listing.resolvedNeighborhood && listing.resolvedBorough) {
+        locationText.textContent = `${listing.resolvedNeighborhood}, ${listing.resolvedBorough}`;
     }
 
     // Update capacity
     const capacityElement = document.querySelector('.property-capacity');
-    if (capacityElement && listing['Features - Qty Guests']) {
-        // Use resolved type from database if available
-        const listingType = listing.resolvedTypeOfSpace || LOOKUP_CACHE.listingTypes[listing['Features - Type of Space']]?.label;
-        const guests = listing['Features - Qty Guests'];
-
-        if (listingType && guests) {
-            capacityElement.textContent = `${listingType} - ${guests} guests max`;
-        } else if (guests) {
-            capacityElement.textContent = `${guests} guests max`;
-        }
+    if (capacityElement && listing.resolvedTypeOfSpace && listing['Features - Qty Guests']) {
+        capacityElement.textContent = `${listing.resolvedTypeOfSpace} - ${listing['Features - Qty Guests']} guests max`;
     }
 
     // Update feature icons
@@ -298,19 +282,8 @@ function updateFeatureIcons(listing) {
     }
 
     // Use resolved type of space from database
-    const typeOfSpace = listing.resolvedTypeOfSpace;
-
-    if (typeOfSpace) {
-        // Use the database value for type of space
-        features.push({ icon: 'home', text: typeOfSpace });
-    } else if (listing['Features - Qty Bedrooms'] === 0) {
-        // Fallback to Studio if bedrooms is 0 and no type of space is set
-        features.push({ icon: 'home', text: 'Studio' });
-    } else if (listing['Features - Qty Bedrooms']) {
-        // Fallback to bedroom count
-        const bedroomCount = listing['Features - Qty Bedrooms'];
-        const bedroomText = bedroomCount === 1 ? 'Bedroom' : 'Bedrooms';
-        features.push({ icon: 'door-open', text: `${bedroomCount} ${bedroomText}` });
+    if (listing.resolvedTypeOfSpace) {
+        features.push({ icon: 'home', text: listing.resolvedTypeOfSpace });
     }
 
     if (listing['Features - Qty Beds']) {
