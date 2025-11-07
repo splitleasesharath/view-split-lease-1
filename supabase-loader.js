@@ -218,29 +218,40 @@ function updateFeatureIcons(listing) {
     const features = [];
 
     if (listing['Kitchen Type']) {
-        features.push({ icon: '🍳', text: listing['Kitchen Type'] });
+        features.push({ icon: 'chef-hat', text: listing['Kitchen Type'] });
     }
 
     if (listing['Features - Qty Bathrooms']) {
-        features.push({ icon: '🚿', text: `${listing['Features - Qty Bathrooms']} Bathroom(s)` });
+        const bathroomCount = listing['Features - Qty Bathrooms'];
+        const bathroomText = bathroomCount === 1 ? 'Bathroom' : 'Bathrooms';
+        features.push({ icon: 'bath', text: `${bathroomCount} ${bathroomText}` });
     }
 
     if (listing['Features - Qty Bedrooms'] === 0) {
-        features.push({ icon: '🏠', text: 'Studio' });
+        features.push({ icon: 'home', text: 'Studio' });
     } else if (listing['Features - Qty Bedrooms']) {
-        features.push({ icon: '🛏️', text: `${listing['Features - Qty Bedrooms']} Bedroom(s)` });
+        const bedroomCount = listing['Features - Qty Bedrooms'];
+        const bedroomText = bedroomCount === 1 ? 'Bedroom' : 'Bedrooms';
+        features.push({ icon: 'door-open', text: `${bedroomCount} ${bedroomText}` });
     }
 
     if (listing['Features - Qty Beds']) {
-        features.push({ icon: '🛏️', text: `${listing['Features - Qty Beds']} Bed(s)` });
+        const bedCount = listing['Features - Qty Beds'];
+        const bedText = bedCount === 1 ? 'Bed' : 'Beds';
+        features.push({ icon: 'bed-double', text: `${bedCount} ${bedText}` });
     }
 
     featureIconsContainer.innerHTML = features.map(feature => `
         <div class="feature-item">
-            <div class="feature-icon" style="font-size: 30px;">${feature.icon}</div>
+            <i data-lucide="${feature.icon}" style="width: 30px; height: 30px;"></i>
             <span>${feature.text}</span>
         </div>
     `).join('');
+
+    // Re-initialize Lucide icons for the newly added elements
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // Update commute section
@@ -281,15 +292,29 @@ function updateAmenities(listing) {
 
     const amenities = resolveAmenities(listing['Features - Amenities In-Unit']);
 
+    // Map amenity names to Lucide icon names
+    const amenityIconMap = {
+        'Air Conditioned': 'wind',
+        'Gym': 'dumbbell',
+        'Hair Dryer': 'wind',
+        'Premium TV': 'tv',
+        'WiFi': 'wifi'
+    };
+
     amenitiesGrid.innerHTML = amenities.map(amenity => {
-        const iconUrl = amenity.icon.startsWith('//') ? `https:${amenity.icon}` : amenity.icon;
+        const iconName = amenityIconMap[amenity.name] || 'circle';
         return `
             <div class="amenity-item">
-                <img src="${iconUrl}" width="27" height="27" alt="${amenity.name}" onerror="this.style.display='none'">
+                <i data-lucide="${iconName}" style="width: 27px; height: 27px;"></i>
                 <span>${amenity.name}</span>
             </div>
         `;
     }).join('');
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // Update safety features
@@ -299,15 +324,27 @@ function updateSafetyFeatures(listing) {
 
     const safetyFeatures = resolveSafety(listing['Features - Safety']);
 
+    // Map safety feature names to Lucide icon names
+    const safetyIconMap = {
+        'Carbon Monoxide Detector': 'shield-alert',
+        'Fire Extinguisher': 'flame',
+        'Smoke Detector': 'shield-check'
+    };
+
     safetyGrid.innerHTML = safetyFeatures.map(feature => {
-        const iconUrl = feature.icon.startsWith('//') ? `https:${feature.icon}` : feature.icon;
+        const iconName = safetyIconMap[feature.name] || 'shield';
         return `
             <div class="amenity-item">
-                <img src="${iconUrl}" width="27" height="27" alt="${feature.name}" onerror="this.style.display='none'">
+                <i data-lucide="${iconName}" style="width: 27px; height: 27px;"></i>
                 <span>${feature.name}</span>
             </div>
         `;
     }).join('');
+
+    // Re-initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 // Update house rules
