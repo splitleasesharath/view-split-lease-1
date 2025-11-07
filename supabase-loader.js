@@ -158,9 +158,26 @@ function updatePageContent(listing, photos) {
 
     // Update location
     const locationLink = document.querySelector('.location-link');
-    if (locationLink && listing['Location - Address']) {
-        const neighborhood = listing['neighborhood (manual input by user)'] || 'Manhattan';
-        locationLink.textContent = `Located in ${neighborhood}`;
+    if (locationLink) {
+        const neighborhood = listing['neighborhood (manual input by user)'];
+
+        if (neighborhood) {
+            // Check if neighborhood already contains "Manhattan" or other borough name
+            const boroughNames = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'];
+            const hasBorough = boroughNames.some(borough => neighborhood.includes(borough));
+
+            if (hasBorough) {
+                // Already has borough in the name (e.g., "Civic Center, Manhattan")
+                locationLink.textContent = neighborhood;
+            } else {
+                // Just the neighborhood name (e.g., "Greenwich Village")
+                // Add "Manhattan" as default borough
+                locationLink.textContent = `${neighborhood}, Manhattan`;
+            }
+        } else {
+            // Fallback if no neighborhood data
+            locationLink.textContent = 'New York City';
+        }
     }
 
     // Update capacity
