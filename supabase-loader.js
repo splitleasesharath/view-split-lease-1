@@ -32,7 +32,7 @@ const LOOKUP_CACHE = {
 
 // Extract listing ID from URL path segment
 function getListingIdFromUrl() {
-    // Extract ID from path: /view-split-lease/<id> or /view-split-lease-1/<id>
+    // Extract ID from path: /view-split-lease/<id> or /view-split-lease-1/<id> or /<id>
     const pathSegments = window.location.pathname.split('/').filter(segment => segment);
 
     // Find the index of 'view-split-lease' or 'view-split-lease-1' segment
@@ -46,6 +46,16 @@ function getListingIdFromUrl() {
         // Make sure it's not a filename (doesn't end with .html, .php, etc.)
         if (!nextSegment.includes('.')) {
             return nextSegment;
+        }
+    }
+
+    // Check if the first path segment looks like a listing ID (contains 'x' and numbers)
+    // Format: ################x################## (e.g., 1586447992720x748691103167545300)
+    if (pathSegments.length > 0) {
+        const firstSegment = pathSegments[0];
+        // Check if it matches the listing ID pattern and is not a filename
+        if (/^\d+x\d+$/.test(firstSegment)) {
+            return firstSegment;
         }
     }
 
